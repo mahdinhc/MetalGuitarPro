@@ -79,6 +79,20 @@ cd android && ./gradlew assembleRelease
 ```
 Run the checks any time with `npm test`.
 
+## If the app still closes at launch
+
+The app is built so that a failing part degrades instead of crashing: a missing native library gives a silent app with a
+message, a damaged save file is reset, and a render error shows a "Try again / Reset saved data" screen. If it still
+dies, the cause is somewhere none of those guards reach, and the log names it. Connect the phone and run:
+
+```bash
+adb logcat -c && adb shell am start -n com.metalguitarpro/.MainActivity
+adb logcat -d AndroidRuntime:E MetalEngine:V ReactNativeJS:V SoLoader:V DEBUG:V libc:F *:S
+```
+
+`AndroidRuntime` = Java/Kotlin exception, `DEBUG`/`libc` = native crash (the lines under `backtrace:` point into
+`libmgp_engine.so`, `libreanimated.so` or `libreact_codegen_rnskia.so`), `MetalEngine` = engine load/stream messages.
+
 ## Layout
 
 ```

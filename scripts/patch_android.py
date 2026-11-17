@@ -106,6 +106,20 @@ apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 gr.write_text(g, encoding="utf-8")
 print("patched manifest, MainApplication, strings, build.gradle")
 
+# ---- ProGuard/R8: keep the JNI surface ---------------------------------------------------------------------
+# The C++ side finds com.metalguitarpro.NativeEngine.native* by name. If anyone ever turns on minification
+# (enableProguardInReleaseBuilds), renaming them would crash the app on the first engine call.
+pg = pathlib.Path("android/app/proguard-rules.pro")
+rules = """
+# Metal Guitar Pro: JNI entry points and the React Native module are resolved by name
+-keep class com.metalguitarpro.** { *; }
+-keepclasseswithmembernames class * { native <methods>; }
+"""
+cur = pg.read_text(encoding="utf-8") if pg.exists() else ""
+if "com.metalguitarpro" not in cur:
+    pg.write_text(cur + rules, encoding="utf-8")
+    print("patched proguard-rules.pro")
+
 # ---- adaptive launcher icon: ember guitar pick with a lightning bolt (+ monochrome for themed icons) -----------
 res = main / "res"
 (res / "drawable").mkdir(parents=True, exist_ok=True)

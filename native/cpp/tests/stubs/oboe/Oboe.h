@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <memory>
 namespace oboe {
-enum class Result { OK, ErrorDisconnected };
+enum class Result { OK, ErrorDisconnected, ErrorNull, ErrorInternal };
 inline const char* convertToText(Result) { return "r"; }
-enum class Direction { Output }; enum class PerformanceMode { LowLatency }; enum class SharingMode { Exclusive, Shared };
+enum class Direction { Output }; enum class PerformanceMode { None, LowLatency }; enum class SharingMode { Exclusive, Shared };
 enum class AudioFormat { Float }; enum class ChannelCount { Stereo }; enum class Usage { Game }; enum class ContentType { Music };
 enum class AudioApi { AAudio, OpenSLES }; enum class DataCallbackResult { Continue, Stop };
 template <class T> struct ResultWithValue { T v; explicit operator bool() const { return true; } T value() const { return v; } };
@@ -27,6 +27,7 @@ class AudioStreamBuilder {
   AudioStreamBuilder* setChannelCount(ChannelCount) { return this; } AudioStreamBuilder* setUsage(Usage) { return this; }
   AudioStreamBuilder* setContentType(ContentType) { return this; } AudioStreamBuilder* setDataCallback(AudioStreamDataCallback*) { return this; }
   AudioStreamBuilder* setErrorCallback(AudioStreamErrorCallback*) { return this; }
+  AudioStreamBuilder* setAudioApi(AudioApi) { return this; }
   Result openStream(std::shared_ptr<AudioStream>& s) { s = std::make_shared<AudioStream>(); return Result::OK; }
 };
 }

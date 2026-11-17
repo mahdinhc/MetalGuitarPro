@@ -1,8 +1,27 @@
 package com.metalguitarpro
 
-/** JNI declarations for libmgp_engine.so (see native/cpp/jni_bridge.cpp). Names must match exactly. */
+import android.util.Log
+
+/**
+ * JNI declarations for libmgp_engine.so (see native/cpp/jni_bridge.cpp). Names must match exactly.
+ *
+ * Loading the library can fail (wrong ABI, missing libc++_shared.so, JNI_OnLoad error). That must never take the app
+ * down: the failure is recorded in [loadError] and [MetalEngineModule] turns every call into a no-op, so the UI still
+ * starts (silent) and can show what went wrong.
+ */
 object NativeEngine {
-    init { System.loadLibrary("mgp_engine") }
+    @Volatile @JvmField var loaded = false
+    @Volatile @JvmField var loadError: String? = null
+
+    init {
+        try {
+            System.loadLibrary("mgp_engine")
+            loaded = true
+        } catch (t: Throwable) {          // UnsatisfiedLinkError is an Error, not an Exception: catch Throwable
+            loadError = t.message ?: t.javaClass.simpleName
+            Log.e("MetalEngine", "could not load libmgp_engine.so", t)
+        }
+    }
 
     @JvmStatic external fun nativeStart(): FloatArray
     @JvmStatic external fun nativeStop()

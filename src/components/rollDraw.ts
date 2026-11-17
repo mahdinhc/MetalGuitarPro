@@ -13,10 +13,13 @@ export function makeRollFonts(): RollFonts {
 }
 
 const BLACK = new Set([1, 3, 6, 8, 10]);
-const paint = Skia.Paint();
-paint.setAntiAlias(true);
+// Created on first use, not at import time: a Skia problem must surface inside the (guarded) piano-roll screen,
+// never while the app's module graph is loading.
+let _paint: ReturnType<typeof Skia.Paint> | null = null;
+function getPaint() { if (!_paint) { _paint = Skia.Paint(); _paint.setAntiAlias(true); } return _paint; }
 
 function fill(cv: ReturnType<ReturnType<typeof Skia.PictureRecorder>['beginRecording']>, color: string, x: number, y: number, w: number, h: number) {
+  const paint = getPaint();
   paint.setStyle(PaintStyle.Fill); paint.setColor(Skia.Color(color)); cv.drawRect(Skia.XYWHRect(x, y, w, h), paint);
 }
 
@@ -25,6 +28,7 @@ export const noteGlyphs = (n: RollNote) => GLYPH.filter(([k]) => n[k]).map(([, g
 
 /** Records one frame of the piano roll. Everything is derived from the controller, so drawing is a pure function. */
 export function drawRoll(c: RollController, w: number, h: number, t: Theme, f: RollFonts): SkPicture {
+  const paint = getPaint();
   const rec = Skia.PictureRecorder();
   const cv = rec.beginRecording(Skia.XYWHRect(0, 0, w, h));
   const m = c.model, rh = c.rh, hi = m.hi, lo = m.lo;

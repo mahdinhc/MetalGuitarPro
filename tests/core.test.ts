@@ -145,4 +145,39 @@ const fbtests = () => {
   t('fretboard: window clamps to the 22-fret neck', () => { const r = rig(); r.fb.setWindow(99); assert.equal(r.fb.w0, 16); });
 };
 fbtests();
+
+// ---- saved-state validation (a bad persisted value must never crash startup) -------------------------------------
+import {sanitizeTone, sanitizeUI, sanitizeValues, parseJSON} from '../src/core/sanitize';
+t('sanitize: garbage and wrong types never throw and give defaults', () => {
+  for (const g of [null, undefined, 0, 'x', [], [1, 2], {}, {values: 5}, {values: null, userPresets: 'no'}]) {
+    const r = sanitizeTone(g as never);
+    if (r) { assert.equal(PARAM_DEFS.every(d => Number.isFinite(r.values[d.id])), true); assert.equal(r.userPresets.length, 0); }
+  }
+  assert.equal(sanitizeTone(null), null); assert.equal(sanitizeUI('nope'), null);
+  assert.equal(parseJSON('{broken'), null); assert.equal(parseJSON(''), null);
+});
+t('sanitize: out-of-range, NaN and string values are clamped to each parameter range', () => {
+  const v = sanitizeValues({gain: 1e9, bass: -1e9, mid: NaN, treb: '5', tun: 999, cabT: -3, sus: Infinity});
+  const gain = PARAM_DEFS.find(d => d.id === 'gain')!, bass = PARAM_DEFS.find(d => d.id === 'bass')!, mid = PARAM_DEFS.find(d => d.id === 'mid')!;
+  assert.equal(v.gain, gain.max); assert.equal(v.bass, bass.min); assert.equal(v.mid, mid.def);
+  assert.equal(v.treb, PARAM_DEFS.find(d => d.id === 'treb')!.def);          // a string is not a number
+  assert.equal(v.tun, TUNINGS.length - 1); assert.equal(TUNINGS[v.tun] !== undefined, true);   // tuning index must stay inside the table
+  assert.equal(v.cabT, PARAM_DEFS.find(d => d.id === 'cabT')!.min);
+  assert.equal(v.sus, PARAM_DEFS.find(d => d.id === 'sus')!.def);   // Infinity is not a usable number either
+});
+t('sanitize: user presets keep only valid entries; ui settings fall back per field', () => {
+  const r = sanitizeTone({values: {}, preset: 7, dirty: 'yes', userPresets: [{name: 'ok', values: {gain: 30, bogus: 1}}, {name: '', values: {}}, {name: 'bad', values: null}, 5, null]})!;
+  assert.equal(r.preset, 'Metal'); assert.equal(r.dirty, false); assert.equal(r.userPresets.length, 1);
+  assert.deepEqual(r.userPresets[0], {name: 'ok', values: {gain: 30}});
+  assert.deepEqual(sanitizeUI({themeMode: 'purple', haptics: 'x', keepAwake: true}), {themeMode: 'system', haptics: true, keepAwake: true});
+});
+t('sanitize: a valid saved tone survives unchanged', () => {
+  const v = sanitizeValues({}); const r = sanitizeTone({values: v, preset: 'Lead', dirty: true, userPresets: []})!;
+  assert.deepEqual(r.values, v); assert.equal(r.preset, 'Lead'); assert.equal(r.dirty, true);
+});
+t('riff model: corrupt saved riff data is rejected, not thrown', () => {
+  const m = mk();
+  for (const bad of ['{', 'null', '[]', '{"n":5}', '{"n":[null]}']) { let ok: boolean; try { ok = m.load(bad); } catch { ok = true; assert.fail('load threw for ' + bad); } assert.equal(ok, false); }
+  assert.equal(m.notes.length, DEFAULT_RIFF.n.length);   // the previous riff is untouched
+});
 console.log(`${n} tests total`);

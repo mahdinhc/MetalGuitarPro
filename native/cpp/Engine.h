@@ -1,5 +1,6 @@
 #pragma once
 #include <atomic>
+#include <cmath>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -58,7 +59,7 @@ class Engine {
   void play(double fromBeat);
   void stopPlay();
   void seek(double beat);
-  void setBpm(double bpm) { bpm_.store((float)bpm, std::memory_order_relaxed); }
+  void setBpm(double bpm) { if (std::isfinite(bpm)) bpm_.store((float)(bpm < 20 ? 20 : (bpm > 400 ? 400 : bpm)), std::memory_order_relaxed); }
   void setMetronome(bool on) { metro_.store(on, std::memory_order_relaxed); }
   EngineStats stats(bool resetPeak = true);
 

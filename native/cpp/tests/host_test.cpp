@@ -69,6 +69,22 @@ int main(int argc, char** argv) {
         auto o = render(e, .02, rate); ok &= finite(o, pk) && pk <= 1.0001f; }
       char m[64]; snprintf(m, sizeof m, "stress @%d Hz finite + limited", rate); check(ok, m); } }
 
+  // 5b. hostile input from the bridge (NaN, out-of-range, null): must neither crash nor poison the audio
+  { Engine e; e.prepare(sr);
+    const float nan = std::nanf("");
+    for (int i = 0; i < P_COUNT; ++i) e.setParam(i, nan);
+    e.setParam(-1, 1); e.setParam(P_COUNT + 7, 1); e.setBpm(nan); e.setBpm(0); e.setBpm(1e9);
+    int bad[6] = {-50, 500, 0, 127, 128, -1}; e.setTuning(bad);
+    e.noteOn(-3, 5, nan, 0, nan); e.noteOn(99, -40, 1, 0, 0); e.noteOn(2, 70000, 1, 0, 0); e.noteOff(-1, 0, 0); e.noteOff(77, 0, 0); e.move(-9, 3, 3); e.move(40, 3, 2);
+    e.setSequence(nullptr, 5, nan, true); e.setSequence(nullptr, -1, -3, false);
+    float junk[16] = {nan, 1, 0, 3, 1, 0, 0, 0,   -4, 99, 77, 3, 1, 0, 0, 0};
+    e.setSequence(junk, 2, 4, true);
+    e.play(nan); e.seek(nan); e.setMetronome(true);
+    for (int i = 0; i < 6; ++i) e.noteOn(i, 3, 1, NF_TREM, 0);
+    auto o = render(e, 1.0, sr); float pk; check(finite(o, pk) && pk <= 1.0001f, "hostile bridge input stays finite and limited");
+    e.setParam(P_gain, 50); e.noteOn(0, 0, 1, 0, 0); auto o2 = render(e, .5, sr);
+    float pk2 = 0; check(finite(o2, pk2) && pk2 > 0.001f, "engine still makes sound after hostile input"); }
+
   // 6. CPU: worst case (all strings, max gain, all fx) real-time factor
   { Engine e; e.prepare(sr); setP(e, P_gain, 100); setP(e, P_room, 80); setP(e, P_dly, 60); setP(e, P_chor, 80); setP(e, P_vib, 1);
     for (int s = 0; s < 6; ++s) e.noteOn(s, 3, 1, NF_TREM, 0);

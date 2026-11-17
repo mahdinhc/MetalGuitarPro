@@ -21,7 +21,7 @@ fi
 if [ ! -d android ]; then
   echo ">> Generating React Native $RN_VERSION scaffold"
   TMP="$(mktemp -d)"
-  npx --yes @react-native-community/cli@latest init MetalGuitarPro \
+  npx --yes @react-native-community/cli@15.0.1 init MetalGuitarPro \
       --version "$RN_VERSION" --package-name "$PKG" \
       --skip-install --skip-git-init --directory "$TMP/app"
   cp -rn "$TMP/app/." .          # never overwrites our own files (index.js, package.json, ...)

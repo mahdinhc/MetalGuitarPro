@@ -8,7 +8,8 @@ static inline double midiHz(double m) { return 440.0 * std::pow(2.0, (m - 69.0) 
 // ------------------------------------------------------------------------------------------------
 std::unique_ptr<SeqData> buildSequence(const float* flat, int count, double length, bool loop) {
   auto d = std::make_unique<SeqData>();
-  d->length = length > 0 ? length : 4.0; d->loop = loop;
+  d->length = (std::isfinite(length) && length > 0) ? length : 4.0; d->loop = loop;
+  if (count < 0 || !flat) count = 0;
   d->ev.reserve(count);
   for (int i = 0; i < count; ++i) {
     const float* e = flat + (size_t)i * kEvStride;
@@ -85,11 +86,11 @@ void Engine::prepare(double sr) {
 
 // ---- control API ---------------------------------------------------------------------------------
 void Engine::setParam(int id, float v) {
-  if (id < 0 || id >= P_COUNT) return;
+  if (id < 0 || id >= P_COUNT || !std::isfinite(v)) return;   // a NaN would poison every filter state
   params_[id].store(clampf(v, kParamMeta[id].min, kParamMeta[id].max), std::memory_order_relaxed);
 }
 void Engine::setParams(const float* v, int n) { for (int i = 0; i < n && i < P_COUNT; ++i) setParam(i, v[i]); }
-void Engine::setTuning(const int* m) { for (int i = 0; i < kStrings; ++i) tuning_[i].store(m[i], std::memory_order_relaxed); }
+void Engine::setTuning(const int* m) { for (int i = 0; i < kStrings; ++i) tuning_[i].store(m[i] < 0 ? 0 : (m[i] > 127 ? 127 : m[i]), std::memory_order_relaxed); }
 
 void Engine::push(const Cmd& c) {
   std::lock_guard<std::mutex> g(qm_);
@@ -110,9 +111,9 @@ void Engine::noteOn(int s, int f, float vel, int flags, float delayMs) { Cmd c{}
 void Engine::noteOff(int s, int flags, float delayMs) { Cmd c{}; c.type = C_OFF; c.str = (int8_t)s; c.flags = flags; c.f1 = delayMs; c.d0 = -1; push(c); }
 void Engine::move(int s, int f, int flags) { Cmd c{}; c.type = C_MOVE; c.str = (int8_t)s; c.fret = (int16_t)f; c.flags = flags; push(c); }
 void Engine::muteAll(float ms) { Cmd c{}; c.type = C_MUTE_ALL; c.f0 = ms; push(c); }
-void Engine::play(double b) { Cmd c{}; c.type = C_PLAY; c.d0 = b; push(c); }
+void Engine::play(double b) { Cmd c{}; c.type = C_PLAY; c.d0 = std::isfinite(b) ? b : 0.0; push(c); }
 void Engine::stopPlay() { Cmd c{}; c.type = C_STOP; push(c); }
-void Engine::seek(double b) { Cmd c{}; c.type = C_SEEK; c.d0 = b; push(c); }
+void Engine::seek(double b) { Cmd c{}; c.type = C_SEEK; c.d0 = std::isfinite(b) ? b : 0.0; push(c); }
 void Engine::setSequence(const float* flat, int count, double len, bool loop) {
   collectGarbage();
   Cmd c{}; c.type = C_SEQ; c.ptr = buildSequence(flat, count, len, loop).release(); push(c);

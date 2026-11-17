@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <oboe/Oboe.h>
@@ -30,11 +31,13 @@ class AudioOutput : public oboe::AudioStreamDataCallback, public oboe::AudioStre
 
  private:
   OutputInfo infoLocked();
+  oboe::Result openWith(bool lowLatency, bool exclusive, bool useAAudio);
   Engine& engine_;
   std::shared_ptr<oboe::AudioStream> stream_;
   std::mutex m_;
   bool wanted_ = false;
   int lastXruns_ = 0;
+  std::atomic<bool> restarting_{false};
 };
 
 }  // namespace mgp
