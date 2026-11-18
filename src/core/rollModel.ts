@@ -116,6 +116,11 @@ export class RollModel {
     });
   }
   setLength(d: number) { this.len = d; return this.edit(n => { n.d = d; }); }
+  /** Snaps start and length of the selected notes to the current grid (length never below one grid step). */
+  quantize() {
+    const g = this.snap;
+    return this.edit(n => { n.t = Math.max(0, Math.round(n.t / g + 1e-6) * g); n.d = Math.max(g, Math.round(n.d / g + 1e-6) * g); });
+  }
   cycleBend() { return this.edit(n => { n.bd = (((n.bd ?? 0) | 0) + 1) % 4; }); }
   setString(s: number) { return this.edit(n => { if (s < 0) delete n.s; else n.s = s; }); }
   setBars(b: number) { this.checkpoint(); this.bars = b; }

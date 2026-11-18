@@ -180,4 +180,12 @@ t('riff model: corrupt saved riff data is rejected, not thrown', () => {
   for (const bad of ['{', 'null', '[]', '{"n":5}', '{"n":[null]}']) { let ok: boolean; try { ok = m.load(bad); } catch { ok = true; assert.fail('load threw for ' + bad); } assert.equal(ok, false); }
   assert.equal(m.notes.length, DEFAULT_RIFF.n.length);   // the previous riff is untouched
 });
+t('quantize snaps start and length of the selection to the grid and is undoable', () => {
+  const m = new RollModel(); m.setRiff({n: [{p: 52, t: 0.13, d: 0.4, v: .8}, {p: 55, t: 1.62, d: 0.02, v: .8}, {p: 57, t: 2.13, d: 0.4, v: .8}], bars: 1, bpm: 120, snap: .25, len: .5});
+  m.sel = new Set([m.notes[0], m.notes[1]]);
+  assert.equal(m.quantize(), true);
+  assert.deepEqual(m.notes.map(x => [x.t, x.d]), [[0.25, 0.5], [1.5, 0.25], [2.13, 0.4]]);   // unselected note untouched; length >= one step
+  assert.equal(m.undo(), true); assert.equal(m.notes[0].t, 0.13);
+  m.sel.clear(); assert.equal(m.quantize(), false);
+});
 console.log(`${n} tests total`);

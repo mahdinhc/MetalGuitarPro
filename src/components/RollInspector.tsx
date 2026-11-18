@@ -1,5 +1,5 @@
 import React from 'react';
-import {ScrollView, Text, View} from 'react-native';
+import {Text, View} from 'react-native';
 import {Btn, Pill, SectionTitle} from '../ui/Controls';
 import {Slider} from '../ui/Slider';
 import {FlagKey} from '../core/rollModel';
@@ -12,8 +12,8 @@ const LENGTHS: Array<[string, number]> = [['1/32', 0.125], ['1/16', 0.25], ['1/8
 const FLAGS: Array<[FlagKey, string]> = [['pm', 'Palm mute'], ['vb', 'Vibrato'], ['hm', 'Harmonic'], ['sl', 'Slide →'], ['lg', 'Hammer/pull →'], ['tr', 'Tremolo'], ['pw', 'Power chord'], ['rg', 'Let ring']];
 const BEND_LABEL = ['Bend', 'Bend ½', 'Bend full', 'Bend 1½'];
 
-/** Edits the selected notes. Every action goes through the model (which checkpoints for undo) and re-syncs the engine. */
-export function RollInspector({maxHeight}: {maxHeight?: number}) {
+/** Edits the selected notes (shown in the "More..." sheet of the note menu). Every action goes through the model (which checkpoints for undo) and re-syncs the engine. */
+export function RollInspector() {
   const t = useTheme();
   useRoll(s => s.rev);
   const tun = useTone(s => s.values.tun);
@@ -26,7 +26,7 @@ export function RollInspector({maxHeight}: {maxHeight?: number}) {
   const bd = sel.every(n => (n.bd ?? 0) === (first.bd ?? 0)) ? first.bd ?? 0 : 0;
   const title = sel.length === 1 ? `${noteName(first.p)}${Math.floor(first.p / 12) - 1}${first._a != null && first._a >= 0 ? `  ·  string ${6 - first._a}, fret ${first._f}` : '  ·  not playable in this tuning'}` : `${sel.length} notes selected`;
   return (
-    <ScrollView style={{maxHeight, flexGrow: 0}} contentContainerStyle={{padding: space.md, gap: space.md}} showsVerticalScrollIndicator={false}>
+    <View style={{gap: space.md, paddingBottom: space.sm}}>
       <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm}}>
         <Text style={{color: t.text, fontWeight: '800', fontSize: 15, flexShrink: 1}} numberOfLines={1}>{title}</Text>
         <View style={{flexDirection: 'row', gap: 6}}>
@@ -62,6 +62,6 @@ export function RollInspector({maxHeight}: {maxHeight?: number}) {
           {[5, 4, 3, 2, 1, 0].map(s => <Pill key={s} label={`${6 - s}  ${noteName(T[s])}`} active={sel.every(n => n.s === s)} onPress={() => done(model.setString(s))} />)}
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }

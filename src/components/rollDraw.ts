@@ -75,7 +75,10 @@ export function drawRoll(c: RollController, w: number, h: number, t: Theme, f: R
     paint.setAlphaf(ghost ? 0.35 : bad ? 0.55 : 0.45 + 0.55 * Math.min(1, n.v));
     cv.drawRRect(rr, paint); paint.setAlphaf(1);
     if (sel || ghost) { paint.setStyle(PaintStyle.Stroke); paint.setStrokeWidth(2); paint.setColor(Skia.Color(t.dark ? '#FFFFFF' : '#1A1815')); cv.drawRRect(rr, paint); paint.setStyle(PaintStyle.Fill); }
-    if (x1 - x0 > 12 && !ghost) fill(cv, 'rgba(255,255,255,0.45)', x1 - 4, y + 4, 2, rh - 8);   // resize handle
+    if (x1 - x0 > 12 && !ghost) {                                  // resize grip (bolder on selected notes)
+      fill(cv, sel ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.45)', x1 - 4, y + 4, 2, rh - 8);
+      if (sel) fill(cv, 'rgba(255,255,255,0.9)', x1 - 8, y + 6, 2, rh - 12);
+    }
     if (x1 - x0 > 22 && rh >= 18 && !ghost) {
       const label = bad ? '×' : `${n._f ?? ''}`;
       text(label, x0 + 5, y + rh / 2 + 4, '#FFFFFF', f.bold);

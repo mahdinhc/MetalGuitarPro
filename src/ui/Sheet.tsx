@@ -1,5 +1,6 @@
 import React from 'react';
 import {Modal, Pressable, ScrollView, Text, View, useWindowDimensions} from 'react-native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {radius, space, useTheme} from '../theme';
 import {Btn} from './Controls';
 
@@ -10,6 +11,7 @@ export function Sheet({visible, title, onClose, children, scroll = true}: {visib
   const land = width > height;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent supportedOrientations={['portrait', 'landscape']}>
+      <GestureHandlerRootView style={{flex: 1}}>
       <Pressable style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: land ? 'center' : 'flex-end', alignItems: 'center'}} onPress={onClose} accessibilityLabel="Close">
         <Pressable onPress={() => {}} style={{width: land ? Math.min(560, width - 48) : '100%', maxHeight: height * (land ? 0.92 : 0.86), backgroundColor: t.surface,
           borderTopLeftRadius: radius.lg + 4, borderTopRightRadius: radius.lg + 4, borderBottomLeftRadius: land ? radius.lg + 4 : 0, borderBottomRightRadius: land ? radius.lg + 4 : 0, paddingTop: space.md, paddingBottom: space.lg}}>
@@ -21,6 +23,7 @@ export function Sheet({visible, title, onClose, children, scroll = true}: {visib
             : <View style={{paddingHorizontal: space.lg}}>{children}</View>}
         </Pressable>
       </Pressable>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

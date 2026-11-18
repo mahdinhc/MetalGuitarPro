@@ -103,7 +103,8 @@ export function PlayScreen() {
       <ChordRow />
       <View style={{flex: 1}}>
         <View style={{flexDirection: 'row'}}>
-          <View style={{width: 32}} />   {/* 26 string-label column + 6 gap */}
+          {/* 26 string-label column + 6 gap */}
+          <View style={{width: 32}} />
           <FretNumbers width={neckW} />
         </View>
         <View style={{flex: 1, flexDirection: 'row', gap: 6}}>

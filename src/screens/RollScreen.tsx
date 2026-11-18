@@ -1,7 +1,8 @@
 import React, {useRef, useState} from 'react';
-import {Pressable, ScrollView, Text, View, useWindowDimensions} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import {RollView} from '../components/RollView';
 import {RollInspector} from '../components/RollInspector';
+import {NoteMenu} from '../components/NoteMenu';
 import {Btn, Pill, Segmented} from '../ui/Controls';
 import {Select} from '../ui/Select';
 import {Sheet} from '../ui/Sheet';
@@ -94,22 +95,20 @@ function Toolbars() {
 
 export function RollScreen() {
   const t = useTheme();
-  const {width, height} = useWindowDimensions();
-  const land = width > height;
+  const [more, setMore] = useState(false);
   const hasSel = useRoll(s => { void s.rev; return model.sel.size > 0; });
+  React.useEffect(() => { if (!hasSel) setMore(false); }, [hasSel]);
+  // The roll always keeps the same size: note controls float over it (NoteMenu) or open in a sheet ("More...").
   return (
     <View style={{flex: 1, backgroundColor: t.bg}}>
       <Toolbars />
-      <View style={{flex: 1, flexDirection: land ? 'row' : 'column'}}>
-        <View style={{flex: 1, margin: space.sm, marginTop: 4, borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: t.line}}>
-          <RollView />
-        </View>
-        {hasSel ? (
-          <View style={{width: land ? 300 : undefined, maxHeight: land ? undefined : height * 0.38, backgroundColor: t.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: land ? 0 : radius.lg, borderWidth: 1, borderColor: t.line}}>
-            <RollInspector maxHeight={land ? undefined : height * 0.38} />
-          </View>
-        ) : null}
+      <View style={{flex: 1, margin: space.sm, marginTop: 4, borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: t.line}}>
+        <RollView />
+        <NoteMenu onMore={() => setMore(true)} />
       </View>
+      <Sheet visible={more && hasSel} title="Note" onClose={() => setMore(false)}>
+        <RollInspector />
+      </Sheet>
     </View>
   );
 }
